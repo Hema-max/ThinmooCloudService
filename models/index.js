@@ -47,8 +47,7 @@ require("dotenv").config();
 const isProduction = process.env.NODE_ENV === 'production';
 const isRailway = !!process.env.RAILWAY_STATIC_URL; // Railway sets this env
 
-// 🔹 Select host automatically
-const DB_HOST = process.env.DB_PUBLIC_HOST;
+
 
 // 🔹 Initialize Sequelize
 const sequelize = new Sequelize(
@@ -56,7 +55,7 @@ const sequelize = new Sequelize(
   process.env.DB_USER,
   process.env.DB_PASS,
   {
-    host: DB_HOST,
+    host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: "postgres",
     dialectOptions: isProduction
