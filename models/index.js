@@ -40,41 +40,50 @@
 
 
 
-
-// backend/models/index.js
-
 const { Sequelize, DataTypes } = require("sequelize");
 require("dotenv").config();
 
-// 🔹 Initialize Sequelize using DATABASE_URL
-const sequelize = new Sequelize(process.env.DATABASE_URL, {
-  dialect: "postgres",
-  dialectOptions: {
-    ssl: {
-      require: true,           // Needed for Railway
-      rejectUnauthorized: false // Self-signed certs
-    }
-  },
-  logging: false, // optional
-});
+// ✅ Detect environment
+const isProduction = process.env.NODE_ENV === 'production';
+const isRailway = !!process.env.RAILWAY_STATIC_URL; // Railway sets this env
+
+// 🔹 Select host automatically
+const DB_HOST = isRailway ? process.env.DB_INTERNAL_HOST : process.env.DB_PUBLIC_HOST;
+
+// 🔹 Initialize Sequelize
+const sequelize = new Sequelize(
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASS,
+  {
+    host: DB_HOST,
+    port: process.env.DB_PORT,
+    dialect: "postgres",
+    dialectOptions: isProduction
+      ? {
+          ssl: {
+            require: true,
+            rejectUnauthorized: false, // accept Railway self-signed SSL
+          },
+        }
+      : {},
+    logging: false,
+    pool: { max: 5, min: 0, acquire: 30000, idle: 10000 },
+    retry: { max: 3 },
+  }
+);
 
 // 🔹 Test connection
 sequelize.authenticate()
-  .then(() => console.log("✅ PostgreSQL connected successfully!"))
-  .catch((err) => console.error("❌ PostgreSQL connection failed:", err));
+  .then(() => console.log(`✅ PostgreSQL connected (${isRailway ? 'internal' : 'public'} host)`))
+  .catch(err => console.error("❌ PostgreSQL connection failed:", err));
 
 // 🔹 Initialize db object
 const db = {};
-
-// 🔹 Import models
 db.DeviceLastSeen = require("./DeviceLastSeen")(sequelize, DataTypes);
-
-// 🔹 Associations (if needed)
-// Example:
-// db.User.hasMany(db.DeviceLastSeen, { foreignKey: "userId" });
-// db.DeviceLastSeen.belongsTo(db.User, { foreignKey: "userId" });
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
 module.exports = db;
+

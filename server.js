@@ -107,13 +107,12 @@
 
 
 
-
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 dotenv.config();
 
-const db = require('./models'); // get sequelize and models
+const db = require('./models'); // sequelize and models
 const { sequelize } = db;
 
 // Routes
@@ -139,52 +138,52 @@ app.use('/api/devices', deviceRoutes);
 // Global cloud token
 let cloudAccessToken = null;
 app.post("/api/set-cloud-token", (req, res) => {
-    const { token } = req.body;
-    if (!token) return res.status(400).json({ error: "Token missing" });
-    cloudAccessToken = token;
-    res.json({ success: true });
+  const { token } = req.body;
+  if (!token) return res.status(400).json({ error: "Token missing" });
+  cloudAccessToken = token;
+  res.json({ success: true });
 });
 
 // Initialize LastSeen service
 const syncService = lastSeenServiceFactory(db, {
-    cloudBase: process.env.BASE_URL || 'http://localhost:5000',
-    accessTokenGetter: () => cloudAccessToken,
+  cloudBase: process.env.BASE_URL || 'http://localhost:5000',
+  accessTokenGetter: () => cloudAccessToken,
 });
 
+// Communities
 const COMMUNITIES = [
-    { id: process.env.COMMUNITY1_ID, uuid: process.env.COMMUNITY1_UUID },
-    { id: process.env.COMMUNITY2_ID, uuid: process.env.COMMUNITY2_UUID },
-    { id: process.env.COMMUNITY3_ID, uuid: process.env.COMMUNITY3_UUID },
-    { id: process.env.COMMUNITY4_ID, uuid: process.env.COMMUNITY4_UUID },
-    { id: process.env.COMMUNITY5_ID, uuid: process.env.COMMUNITY5_UUID },
+  { id: process.env.COMMUNITY1_ID, uuid: process.env.COMMUNITY1_UUID },
+  { id: process.env.COMMUNITY2_ID, uuid: process.env.COMMUNITY2_UUID },
+  { id: process.env.COMMUNITY3_ID, uuid: process.env.COMMUNITY3_UUID },
+  { id: process.env.COMMUNITY4_ID, uuid: process.env.COMMUNITY4_UUID },
+  { id: process.env.COMMUNITY5_ID, uuid: process.env.COMMUNITY5_UUID },
 ];
 
 // ✅ Start server
 async function start() {
-    try {
-        await sequelize.authenticate();
-        console.log('✅ Database connected successfully.');
+  try {
+    await sequelize.authenticate();
+    console.log('✅ Database connected successfully.');
 
-        await sequelize.sync({ alter: true });
-        console.log('✅ Tables synced');
+    await sequelize.sync({ alter: true });
+    console.log('✅ Tables synced');
 
-        // Start scheduled LastSeen jobs
-        COMMUNITIES.forEach(c =>
-            syncService.startScheduledJobs({ communityId: c.id, communityUuid: c.uuid })
-        );
+    // Start scheduled LastSeen jobs
+    COMMUNITIES.forEach(c =>
+      syncService.startScheduledJobs({ communityId: c.id, communityUuid: c.uuid })
+    );
 
-        // Mount LastSeen routes
-        const lastSeenRoutes = lastSeenRoutesFactory(db, syncService);
-        app.use('/api/local/lastseen', lastSeenRoutes);
+    // Mount LastSeen routes
+    const lastSeenRoutes = lastSeenRoutesFactory(db, syncService);
+    app.use('/api/local/lastseen', lastSeenRoutes);
 
-        app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
-    } catch (err) {
-        console.error('❌ Failed to start server:', err);
-    }
+    app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+  } catch (err) {
+    console.error('❌ Failed to start server:', err);
+  }
 }
 
 start();
-
 
 
 
