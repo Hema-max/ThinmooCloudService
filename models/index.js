@@ -41,32 +41,53 @@
 
 
 
+// backend/models/index.js
 
 const { Sequelize, DataTypes } = require("sequelize");
 require("dotenv").config();
 
+// 🔹 Initialize Sequelize
 const sequelize = new Sequelize(
   process.env.DB_NAME,
   process.env.DB_USER,
   process.env.DB_PASS,
   {
     host: process.env.DB_HOST,
+    port: process.env.DB_PORT || 5432,
     dialect: "postgres",
-    port: process.env.DB_PORT,
-    logging: false,
+    dialectOptions: {
+      ssl: {
+        require: true,           // Required for Railway public DB
+        rejectUnauthorized: false // Self-signed certificate
+      }
+    },
+    logging: false, // optional: hide SQL logs
   }
 );
 
-// Test connection
+// 🔹 Test the connection
 sequelize.authenticate()
-  .then(() => console.log("✅ PostgreSQL connected"))
-  .catch(err => console.error("❌ PostgreSQL connection failed:", err));
+  .then(() => console.log("✅ PostgreSQL connected successfully!"))
+  .catch((err) => console.error("❌ PostgreSQL connection failed:", err));
 
+// 🔹 Initialize db object
 const db = {};
-db.Sequelize = Sequelize;
-db.sequelize = sequelize;
 
-db.User = require("./user")(sequelize, DataTypes);
+// 🔹 Import models
+
 db.DeviceLastSeen = require("./DeviceLastSeen")(sequelize, DataTypes);
+// Add more models here as needed
+// db.OtherModel = require("./OtherModel")(sequelize, DataTypes);
+
+// 🔹 Setup associations if any
+// Example:
+// db.User.hasMany(db.DeviceLastSeen, { foreignKey: "userId" });
+// db.DeviceLastSeen.belongsTo(db.User, { foreignKey: "userId" });
+
+db.sequelize = sequelize;
+db.Sequelize = Sequelize;
 
 module.exports = db;
+
+
+

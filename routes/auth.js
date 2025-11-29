@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const axios = require('axios'); // ✅ add this
-const { User } = require('../models');
 require('dotenv').config();
 
 // 🔹 Login API (get access token)
