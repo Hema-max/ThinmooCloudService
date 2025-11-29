@@ -43,13 +43,9 @@
 const { Sequelize, DataTypes } = require("sequelize");
 require("dotenv").config();
 
-// ✅ Detect environment
 const isProduction = process.env.NODE_ENV === 'production';
-const isRailway = !!process.env.RAILWAY_STATIC_URL; // Railway sets this env
+const isRailway = !!process.env.RAILWAY_STATIC_URL;
 
-
-
-// 🔹 Initialize Sequelize
 const sequelize = new Sequelize(
   process.env.DB_NAME,
   process.env.DB_USER,
@@ -58,11 +54,11 @@ const sequelize = new Sequelize(
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: "postgres",
-    dialectOptions: isProduction
+    dialectOptions: (isProduction || isRailway)
       ? {
           ssl: {
             require: true,
-            rejectUnauthorized: false, // accept Railway self-signed SSL
+            rejectUnauthorized: false,
           },
         }
       : {},
@@ -72,12 +68,10 @@ const sequelize = new Sequelize(
   }
 );
 
-// 🔹 Test connection
 sequelize.authenticate()
   .then(() => console.log(`✅ PostgreSQL connected (${isRailway ? 'internal' : 'public'} host)`))
   .catch(err => console.error("❌ PostgreSQL connection failed:", err));
 
-// 🔹 Initialize db object
 const db = {};
 db.DeviceLastSeen = require("./DeviceLastSeen")(sequelize, DataTypes);
 
@@ -85,4 +79,3 @@ db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
 module.exports = db;
-
