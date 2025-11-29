@@ -118,7 +118,6 @@ const { sequelize } = db;
 
 // Routes
 const authRoutes = require('./routes/auth');
-
 const employeeRoutes = require('./routes/employee');
 const departmentRoutes = require('./routes/department');
 const deviceRoutes = require('./routes/device');
@@ -133,7 +132,6 @@ const PORT = process.env.PORT || 5000;
 
 // Register routes
 app.use('/api/auth', authRoutes);
-
 app.use('/api/employees', employeeRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/devices', deviceRoutes);
@@ -170,12 +168,12 @@ async function start() {
         await sequelize.sync({ alter: true });
         console.log('✅ Tables synced');
 
-        // Start scheduled jobs after DB ready
+        // Start scheduled LastSeen jobs
         COMMUNITIES.forEach(c =>
             syncService.startScheduledJobs({ communityId: c.id, communityUuid: c.uuid })
         );
 
-        // Mount lastSeen routes
+        // Mount LastSeen routes
         const lastSeenRoutes = lastSeenRoutesFactory(db, syncService);
         app.use('/api/local/lastseen', lastSeenRoutes);
 
@@ -186,6 +184,7 @@ async function start() {
 }
 
 start();
+
 
 
 
