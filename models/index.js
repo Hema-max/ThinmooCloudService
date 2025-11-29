@@ -1,7 +1,7 @@
-const { Sequelize, DataTypes } = require("sequelize");
-require("dotenv").config();
+// const { Sequelize, DataTypes } = require("sequelize");
+// require("dotenv").config();
 
-// ✅ Create Sequelize instance
+// // ✅ Create Sequelize instance
 // const sequelize = new Sequelize(
 //   process.env.DB_NAME,
 //   process.env.DB_USER,
@@ -21,35 +21,52 @@ require("dotenv").config();
 // );
 
 
+// // ✅ Test the database connection
+// sequelize
+//   .authenticate()
+//   .then(() => console.log("✅ Database connected successfully"))
+//   .catch((err) => console.error("❌ Database connection failed:", err));
+
+// // ✅ Export models and sequelize
+// const db = {};
+// db.Sequelize = Sequelize;
+// db.sequelize = sequelize;
+
+// // Import models here (add yours as needed)
+// db.User = require("./user")(sequelize, DataTypes);
+// db.DeviceLastSeen = require("./DeviceLastSeen")(sequelize, DataTypes);
+
+// module.exports = db;
+
+
+
+
+
+const { Sequelize, DataTypes } = require("sequelize");
+require("dotenv").config();
+
 const sequelize = new Sequelize(
   process.env.DB_NAME,
   process.env.DB_USER,
   process.env.DB_PASS,
   {
     host: process.env.DB_HOST,
-    dialect: process.env.DB_DIALECT,
+    dialect: "postgres",
     port: process.env.DB_PORT,
     logging: false,
   }
 );
 
+// Test connection
+sequelize.authenticate()
+  .then(() => console.log("✅ PostgreSQL connected"))
+  .catch(err => console.error("❌ PostgreSQL connection failed:", err));
 
-
-// ✅ Test the database connection
-sequelize
-  .authenticate()
-  .then(() => console.log("✅ Database connected successfully"))
-  .catch((err) => console.error("❌ Database connection failed:", err));
-
-// ✅ Export models and sequelize
 const db = {};
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
-// Import models here (add yours as needed)
 db.User = require("./user")(sequelize, DataTypes);
 db.DeviceLastSeen = require("./DeviceLastSeen")(sequelize, DataTypes);
 
 module.exports = db;
-
-
