@@ -53,6 +53,11 @@ const syncService = lastSeenServiceFactory(models, {
 });
 
 
+sequelize.sync({ alter: true })  // FIRST DEPLOY ONLY
+  .then(() => console.log("✅ Tables created/updated"))
+  .catch(err => console.error(err));
+
+
 
 // --- Place this after syncService is imported ---
 const COMMUNITIES = [
