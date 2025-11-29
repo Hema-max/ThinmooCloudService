@@ -48,7 +48,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 const isRailway = !!process.env.RAILWAY_STATIC_URL; // Railway sets this env
 
 // 🔹 Select host automatically
-const DB_HOST = isRailway ? process.env.DB_INTERNAL_HOST : process.env.DB_PUBLIC_HOST;
+const DB_HOST = process.env.DB_PUBLIC_HOST;
 
 // 🔹 Initialize Sequelize
 const sequelize = new Sequelize(
