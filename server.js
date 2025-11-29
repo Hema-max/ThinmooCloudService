@@ -147,7 +147,7 @@ console.log("ENV DEBUG:", {
     DB_NAME: process.env.DB_NAME,
     DB_USER: process.env.DB_USER,
     DB_PASS: process.env.DB_PASS ? "****" : "EMPTY",
-    DB_HOST: process.env.DB_PUBLIC_HOST,
+    DB_HOST: process.env.DB_HOST,
 });
 
 
