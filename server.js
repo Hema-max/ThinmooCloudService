@@ -127,11 +127,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-dotenv.config();
 console.log("🚀 Using Railway PORT =", process.env.PORT);
 
 
 const PORT = process.env.PORT || 5000;
+
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
 
 // Register routes
 app.use('/api/auth', authRoutes);
@@ -166,7 +168,7 @@ app.post("/api/set-cloud-token", (req, res) => {
 
 // Initialize LastSeen service
 const syncService = lastSeenServiceFactory(db, {
-    cloudBase: process.env.BASE_URL || 'http://localhost:5000',
+    cloudBase: process.env.BASE_URL || process.env.LOCAL_BASE_URL,
     accessTokenGetter: () => cloudAccessToken,
 });
 
