@@ -1,10 +1,11 @@
 {
   "name": "mconnect-backend",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "rebuild": "echo rebuilding"
   },
   "dependencies": {
     "axios": "^1.12.2",

@@ -127,6 +127,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+dotenv.config();
+console.log("🚀 Using Railway PORT =", process.env.PORT);
+
+
 const PORT = process.env.PORT || 5000;
 
 // Register routes
