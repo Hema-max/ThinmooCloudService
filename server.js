@@ -125,12 +125,15 @@ const lastSeenServiceFactory = require('./services/lastSeenSync');
 
 const app = express();
 // app.use(cors());
-app.use(cors({
-    origin: "*",
-    methods: "GET,POST,PUT,DELETE",
-    credentials: false,
-}));
+// ✅ Middleware to parse JSON bodies
 app.use(express.json());
+
+// ✅ CORS setup: allow only your Netlify frontend
+app.use(cors({
+  origin: 'https://resilient-centaur-bb878c.netlify.app', // <-- your Netlify URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true, // only needed if you send cookies or auth headers
+}));
 app.options('*', cors());
 
 
