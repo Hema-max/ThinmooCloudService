@@ -5,7 +5,7 @@ const { Op } = require("sequelize");
 
 module.exports = (models, options = {}) => {
     const DeviceLastSeen = models.DeviceLastSeen;
-    const cloudBase = options.cloudBase || "http://localhost:5000";
+    const cloudBase = options.cloudBase || "https://thinmoocloudservice-production.up.railway.app";
     const accessTokenGetter = options.accessTokenGetter || (() => process.env.CLOUD_TOKEN);
 
     // --- Time window helpers ---
