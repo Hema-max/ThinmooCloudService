@@ -124,7 +124,12 @@ const lastSeenRoutesFactory = require('./routes/lastseen');
 const lastSeenServiceFactory = require('./services/lastSeenSync');
 
 const app = express();
-app.use(cors());
+// app.use(cors());
+app.use(cors({
+    origin: "https://resilient-centaur-bb878c.netlify.app",
+    methods: "GET,POST,PUT,DELETE",
+    credentials: true,
+}));
 app.use(express.json());
 
 console.log("🚀 Using Railway PORT =", process.env.PORT);
@@ -168,7 +173,7 @@ app.post("/api/set-cloud-token", (req, res) => {
 
 // Initialize LastSeen service
 const syncService = lastSeenServiceFactory(db, {
-    cloudBase: process.env.BASE_URL || process.env.LOCAL_BASE_URL,
+    cloudBase:  process.env.BASE_URL, 
     accessTokenGetter: () => cloudAccessToken,
 });
 
@@ -191,9 +196,9 @@ async function start() {
         console.log('✅ Tables synced');
 
         // Start scheduled LastSeen jobs
-        COMMUNITIES.forEach(c =>
-            syncService.startScheduledJobs({ communityId: c.id, communityUuid: c.uuid })
-        );
+        // COMMUNITIES.forEach(c =>
+        //     syncService.startScheduledJobs({ communityId: c.id, communityUuid: c.uuid })
+        // );
 
         // Mount LastSeen routes
         const lastSeenRoutes = lastSeenRoutesFactory(db, syncService);
