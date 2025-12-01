@@ -126,11 +126,13 @@ const lastSeenServiceFactory = require('./services/lastSeenSync');
 const app = express();
 // app.use(cors());
 app.use(cors({
-    origin: "https://resilient-centaur-bb878c.netlify.app",
+    origin: "*",
     methods: "GET,POST,PUT,DELETE",
-    credentials: true,
+    credentials: false,
 }));
 app.use(express.json());
+app.options('*', cors());
+
 
 console.log("🚀 Using Railway PORT =", process.env.PORT);
 

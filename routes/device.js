@@ -201,7 +201,7 @@ router.post("/get", async (req, res) => {
 /**
  * 6️⃣ Get Device List
  */
-router.get("/list", async (req, res) => {
+router.post("/list", async (req, res) => {
   try {
     const {
       accessToken,

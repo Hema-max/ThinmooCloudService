@@ -5,7 +5,7 @@ const axios = require('axios'); // ✅ add this
 require('dotenv').config();
 
 // 🔹 Login API (get access token)
-router.get('/login', async (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const appId = '8fc3b61f72a649339a5426be8ca59fe4';
     const appSecret = '5c30faa8a5c774148e3e3f181cc3aaee';

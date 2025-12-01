@@ -37,7 +37,7 @@ module.exports = (models, options = {}) => {
     ) => {
         try {
             console.log('accessToken', accessToken);
-            const res = await axios.get(`${cloudBase}/api/devices/list`, {
+            const res = await axios.post(`${cloudBase}/api/devices/list`, {
                 params: {
                     accessToken,
                     extCommunityId: communityId,
