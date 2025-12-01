@@ -1,16 +1,9 @@
 const express = require('express');
-const cors = require('cors');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const axios = require('axios'); // ✅ add this
 require('dotenv').config();
 
-
-router.use(cors({
-  origin: 'https://resilient-centaur-bb878c.netlify.app',
-  methods: ['GET','POST'],
-  credentials: true
-}));
 
 // 🔹 Login API (get access token)
 router.post('/login', async (req, res) => {
