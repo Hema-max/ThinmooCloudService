@@ -31,38 +31,30 @@ const router = express.Router();
 const axios = require('axios');
 require('dotenv').config();
 
+// ✅ Handle preflight OPTIONS
+router.options('/login', (req, res) => res.sendStatus(200));
 
-// ⭐ FIX: Handle preflight OPTIONS request
-router.options('/login', (req, res) => {
-  res.sendStatus(200);
-});
-
+// 🔹 Login API (fetch Thinmoo token)
 router.post('/login', async (req, res) => {
-  try {
-    const appId = '8fc3b61f72a649339a5426be8ca59fe4';
-    const appSecret = '5c30faa8a5c774148e3e3f181cc3aaee';
+    try {
+        const appId = process.env.TM_APP_ID || '8fc3b61f72a649339a5426be8ca59fe4';
+        const appSecret = process.env.TM_APP_SECRET || '5c30faa8a5c774148e3e3f181cc3aaee';
 
-    const url = `https://api-cloud.thinmoo.com/platCompany/extapi/getAccessToken?appId=${appId}&appSecret=${appSecret}`;
+        const url = `https://api-cloud.thinmoo.com/platCompany/extapi/getAccessToken?appId=${appId}&appSecret=${appSecret}`;
 
-    const response = await axios.get(url);
+        const response = await axios.get(url);
 
-    // response.data might be { code, msg, data } or { data: { accessToken, expiresIn } }
-    const tokenData = response.data && (response.data.data || response.data);
+        const tokenData = response.data?.data || response.data;
 
-    return res.status(200).json({
-      success: true,
-      data: tokenData
-    });
-
-  } catch (error) {
-    console.error("Thinmoo Token API ERROR:", error?.response?.data || error.message || error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Unable to fetch access token",
-      error: error?.response?.data || error.message || String(error)
-    });
-  }
+        return res.status(200).json({ success: true, data: tokenData });
+    } catch (error) {
+        console.error("Thinmoo Token API ERROR:", error?.response?.data || error.message || error);
+        return res.status(500).json({
+            success: false,
+            message: "Unable to fetch access token",
+            error: error?.response?.data || error.message || String(error)
+        });
+    }
 });
 
 module.exports = router;

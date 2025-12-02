@@ -127,30 +127,31 @@ const app = express();
 // ----------------------------------------------
 // ✅ CORS CONFIGURATION (Netlify + Localhost)
 // ----------------------------------------------
+const allowedOrigins = [
+    'https://resilient-centaur-bb878c.netlify.app',
+    'http://localhost:5173'
+];
+
 app.use(cors({
-    origin: [
-        'https://resilient-centaur-bb878c.netlify.app',  // Live frontend
-        'http://localhost:5173'                         // Local testing
-    ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    origin: function(origin, callback){
+        // allow requests with no origin like mobile apps or curl
+        if(!origin) return callback(null, true);
+        if(allowedOrigins.indexOf(origin) === -1){
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+    allowedHeaders: ['Content-Type','Authorization'],
     credentials: true
 }));
 
-app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "https://resilient-centaur-bb878c.netlify.app");
-    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    res.header("Access-Control-Allow-Credentials", "true");
-    next();
-});
-
+// Handle preflight globally
 app.options('*', cors());
 
 // JSON parsing
 app.use(express.json());
-
-// Debug
-console.log("🚀 Railway PORT =", process.env.PORT);
 
 // ----------------------------------------------
 // HEALTH CHECK
@@ -173,7 +174,6 @@ let cloudAccessToken = null;
 app.post("/api/set-cloud-token", (req, res) => {
     const { token } = req.body;
     if (!token) return res.status(400).json({ error: "Token missing" });
-
     cloudAccessToken = token;
     res.json({ success: true });
 });
@@ -196,7 +196,7 @@ const COMMUNITIES = [
 ];
 
 // ----------------------------------------------
-// ✅ ENABLE LAST SEEN SCHEDULER (IMPORTANT)
+// ✅ ENABLE LAST SEEN SCHEDULER
 // ----------------------------------------------
 COMMUNITIES.forEach(c => {
     if (c.id && c.uuid) {
@@ -208,9 +208,7 @@ COMMUNITIES.forEach(c => {
     }
 });
 
-// ----------------------------------------------
 // LASTSEEN ROUTES
-// ----------------------------------------------
 const lastSeenRoutes = lastSeenRoutesFactory(db, syncService);
 app.use('/api/local/lastseen', lastSeenRoutes);
 
@@ -229,10 +227,10 @@ async function start() {
         app.listen(PORT, () =>
             console.log(`🚀 Backend running on port ${PORT}`)
         );
-
     } catch (err) {
         console.error('❌ Server start failed:', err);
     }
 }
 
 start();
+
