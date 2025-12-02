@@ -106,16 +106,15 @@
 
 
 
-
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 dotenv.config();
 
-const db = require('./models'); // sequelize and models
+const db = require('./models');
 const { sequelize } = db;
 
-// Routes
+// Route modules
 const authRoutes = require('./routes/auth');
 const employeeRoutes = require('./routes/employee');
 const departmentRoutes = require('./routes/department');
@@ -124,65 +123,70 @@ const lastSeenRoutesFactory = require('./routes/lastseen');
 const lastSeenServiceFactory = require('./services/lastSeenSync');
 
 const app = express();
-// app.use(cors());
-// ✅ Middleware to parse JSON bodies
-app.use(express.json());
 
-// ✅ CORS setup: allow only your Netlify frontend
+// ----------------------------------------------
+// ✅ CORS CONFIGURATION (Netlify + Localhost)
+// ----------------------------------------------
 app.use(cors({
-  origin: 'https://resilient-centaur-bb878c.netlify.app', // <-- your Netlify URL
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true, // only needed if you send cookies or auth headers
+    origin: [
+        'https://resilient-centaur-bb878c.netlify.app',  // Live frontend
+        'http://localhost:5173'                         // Local testing
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
 }));
+
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "https://resilient-centaur-bb878c.netlify.app");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.header("Access-Control-Allow-Credentials", "true");
+    next();
+});
+
 app.options('*', cors());
 
+// JSON parsing
+app.use(express.json());
 
-console.log("🚀 Using Railway PORT =", process.env.PORT);
+// Debug
+console.log("🚀 Railway PORT =", process.env.PORT);
 
-
-const PORT = process.env.PORT || 5000;
-
+// ----------------------------------------------
+// HEALTH CHECK
+// ----------------------------------------------
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-
-// Register routes
+// ----------------------------------------------
+// ROUTES
+// ----------------------------------------------
 app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/devices', deviceRoutes);
 
-
-sequelize.authenticate()
-    .then(() => console.log("Connected to PostgreSQL"))
-    .catch(err => {
-        console.error("❌ Sequelize Connection Error:", err);
-    });
-
-
-console.log("ENV DEBUG:", {
-    DB_NAME: process.env.DB_NAME,
-    DB_USER: process.env.DB_USER,
-    DB_PASS: process.env.DB_PASS ? "****" : "EMPTY",
-    DB_HOST: process.env.DB_HOST,
-});
-
-
-// Global cloud token
+// ----------------------------------------------
+// GLOBAL CLOUD TOKEN STORAGE
+// ----------------------------------------------
 let cloudAccessToken = null;
+
 app.post("/api/set-cloud-token", (req, res) => {
     const { token } = req.body;
     if (!token) return res.status(400).json({ error: "Token missing" });
+
     cloudAccessToken = token;
     res.json({ success: true });
 });
 
-// Initialize LastSeen service
+// ----------------------------------------------
+// LAST SEEN SERVICE SETUP
+// ----------------------------------------------
 const syncService = lastSeenServiceFactory(db, {
-    cloudBase:  process.env.BASE_URL, 
+    cloudBase: process.env.BASE_URL,
     accessTokenGetter: () => cloudAccessToken,
 });
 
-// Communities
+// Community list
 const COMMUNITIES = [
     { id: process.env.COMMUNITY1_ID, uuid: process.env.COMMUNITY1_UUID },
     { id: process.env.COMMUNITY2_ID, uuid: process.env.COMMUNITY2_UUID },
@@ -191,7 +195,28 @@ const COMMUNITIES = [
     { id: process.env.COMMUNITY5_ID, uuid: process.env.COMMUNITY5_UUID },
 ];
 
-// ✅ Start server
+// ----------------------------------------------
+// ✅ ENABLE LAST SEEN SCHEDULER (IMPORTANT)
+// ----------------------------------------------
+COMMUNITIES.forEach(c => {
+    if (c.id && c.uuid) {
+        console.log(`⏳ Starting scheduler for Community ${c.id}`);
+        syncService.startScheduledJobs({
+            communityId: c.id,
+            communityUuid: c.uuid
+        });
+    }
+});
+
+// ----------------------------------------------
+// LASTSEEN ROUTES
+// ----------------------------------------------
+const lastSeenRoutes = lastSeenRoutesFactory(db, syncService);
+app.use('/api/local/lastseen', lastSeenRoutes);
+
+// ----------------------------------------------
+// START SERVER
+// ----------------------------------------------
 async function start() {
     try {
         await sequelize.authenticate();
@@ -200,22 +225,14 @@ async function start() {
         await sequelize.sync({ alter: true });
         console.log('✅ Tables synced');
 
-        // Start scheduled LastSeen jobs
-        // COMMUNITIES.forEach(c =>
-        //     syncService.startScheduledJobs({ communityId: c.id, communityUuid: c.uuid })
-        // );
+        const PORT = process.env.PORT || 5000;
+        app.listen(PORT, () =>
+            console.log(`🚀 Backend running on port ${PORT}`)
+        );
 
-        // Mount LastSeen routes
-        const lastSeenRoutes = lastSeenRoutesFactory(db, syncService);
-        app.use('/api/local/lastseen', lastSeenRoutes);
-
-        app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
     } catch (err) {
-        console.error('❌ Failed to start server:', err);
+        console.error('❌ Server start failed:', err);
     }
 }
 
 start();
-
-
-
