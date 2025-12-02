@@ -149,10 +149,10 @@ app.post("/api/set-cloud-token", (req, res) => {
 });
 
 // Last Seen service
-const syncService = lastSeenServiceFactory(db, {
-    cloudBase: process.env.BASE_URL,
-    accessTokenGetter: () => cloudAccessToken,
-});
+// const syncService = lastSeenServiceFactory(db, {
+//     cloudBase: process.env.BASE_URL,
+//     accessTokenGetter: () => cloudAccessToken,
+// });
 
 // Communities
 const COMMUNITIES = [
@@ -164,8 +164,8 @@ const COMMUNITIES = [
 ];
 
 // LastSeen routes
-const lastSeenRoutes = lastSeenRoutesFactory(db, syncService);
-app.use('/api/local/lastseen', lastSeenRoutes);
+// const lastSeenRoutes = lastSeenRoutesFactory(db, syncService);
+// app.use('/api/local/lastseen', lastSeenRoutes);
 
 // Start server
 async function start() {
