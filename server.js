@@ -151,6 +151,7 @@ app.use(express.json());
 // ----------------------------------------------
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
+
 // ----------------------------------------------
 // ROUTES
 // ----------------------------------------------
@@ -177,6 +178,17 @@ app.post("/api/set-cloud-token", (req, res) => {
 const syncService = lastSeenServiceFactory(db, {
     cloudBase: process.env.BASE_URL,
     accessTokenGetter: () => cloudAccessToken,
+});
+
+// ----------------------------------------------
+// Serve frontend static files (after all /api routes)
+// ----------------------------------------------
+const path = require('path');
+app.use(express.static(path.join(__dirname, 'dist')));
+
+// Fallback for React routing
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 // Community list
