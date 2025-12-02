@@ -31,6 +31,12 @@ const router = express.Router();
 const axios = require('axios');
 require('dotenv').config();
 
+
+// ⭐ FIX: Handle preflight OPTIONS request
+router.options('/login', (req, res) => {
+  res.sendStatus(200);
+});
+
 router.post('/login', async (req, res) => {
   try {
     const appId = '8fc3b61f72a649339a5426be8ca59fe4';
