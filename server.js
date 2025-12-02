@@ -170,11 +170,11 @@ const COMMUNITIES = [
 // Start server
 async function start() {
     try {
-        await sequelize.authenticate();
-        console.log('✅ Database connected successfully.');
+        // await sequelize.authenticate();
+        // console.log('✅ Database connected successfully.');
 
-        // await sequelize.sync({ alter: true });
-        await sequelize.sync(); // fast, non-blocking
+        // // await sequelize.sync({ alter: true });
+        // await sequelize.sync(); // fast, non-blocking
 
         console.log('✅ Tables synced');
 
