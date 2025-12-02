@@ -114,7 +114,6 @@ dotenv.config();
 const db = require('./models');
 const { sequelize } = db;
 
-// Route modules
 const authRoutes = require('./routes/auth');
 const employeeRoutes = require('./routes/employee');
 const departmentRoutes = require('./routes/department');
@@ -124,102 +123,87 @@ const lastSeenServiceFactory = require('./services/lastSeenSync');
 
 const app = express();
 
-// ----------------------------------------------
-// ✅ CORS CONFIGURATION (Netlify + Localhost)
-// ----------------------------------------------
-app.use(cors({ origin: '*' })); // temporarily allow all
-app.set('trust proxy', 1);
+// CORS
+app.use(cors({ origin: '*' }));
 app.options('*', cors());
 
-// JSON parsing
+// JSON
 app.use(express.json());
 
-// Debug
-console.log("🚀 Railway PORT =", process.env.PORT);
-
-// ----------------------------------------------
-// HEALTH CHECK
-// ----------------------------------------------
+// Health check
 app.get('/', (req, res) => res.json({ status: 'ok' }));
 
-// ----------------------------------------------
-// ROUTES
-// ----------------------------------------------
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/devices', deviceRoutes);
 
-// ----------------------------------------------
-// GLOBAL CLOUD TOKEN STORAGE
-// ----------------------------------------------
+// Cloud token
 let cloudAccessToken = null;
-
 app.post("/api/set-cloud-token", (req, res) => {
-  const { token } = req.body;
-  if (!token) return res.status(400).json({ error: "Token missing" });
-
-  cloudAccessToken = token;
-  res.json({ success: true });
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ error: "Token missing" });
+    cloudAccessToken = token;
+    res.json({ success: true });
 });
 
-// ----------------------------------------------
-// LAST SEEN SERVICE SETUP
-// ----------------------------------------------
+// Last Seen service
 const syncService = lastSeenServiceFactory(db, {
-  cloudBase: process.env.BASE_URL,
-  accessTokenGetter: () => cloudAccessToken,
+    cloudBase: process.env.BASE_URL,
+    accessTokenGetter: () => cloudAccessToken,
 });
 
-// Community list
+// Communities
 const COMMUNITIES = [
-  { id: process.env.COMMUNITY1_ID, uuid: process.env.COMMUNITY1_UUID },
-  { id: process.env.COMMUNITY2_ID, uuid: process.env.COMMUNITY2_UUID },
-  { id: process.env.COMMUNITY3_ID, uuid: process.env.COMMUNITY3_UUID },
-  { id: process.env.COMMUNITY4_ID, uuid: process.env.COMMUNITY4_UUID },
-  { id: process.env.COMMUNITY5_ID, uuid: process.env.COMMUNITY5_UUID },
+    { id: process.env.COMMUNITY1_ID, uuid: process.env.COMMUNITY1_UUID },
+    { id: process.env.COMMUNITY2_ID, uuid: process.env.COMMUNITY2_UUID },
+    { id: process.env.COMMUNITY3_ID, uuid: process.env.COMMUNITY3_UUID },
+    { id: process.env.COMMUNITY4_ID, uuid: process.env.COMMUNITY4_UUID },
+    { id: process.env.COMMUNITY5_ID, uuid: process.env.COMMUNITY5_UUID },
 ];
 
-// ----------------------------------------------
-// START SERVER
-// ----------------------------------------------
+// LastSeen routes
+const lastSeenRoutes = lastSeenRoutesFactory(db, syncService);
+app.use('/api/local/lastseen', lastSeenRoutes);
+
+// Start server
 async function start() {
-  try {
-    await sequelize.authenticate();
-    console.log('✅ Database connected successfully.');
+    try {
+        await sequelize.authenticate();
+        console.log('✅ Database connected successfully.');
 
-    await sequelize.sync({ alter: true });
-    console.log('✅ Tables synced');
+        await sequelize.sync({ alter: true });
+        console.log('✅ Tables synced');
 
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
-      console.log(`🚀 Backend running on port ${PORT}`);
+        const PORT = process.env.PORT || 5000;
+        app.listen(PORT, () => {
+            console.log(`🚀 Backend running on port ${PORT}`);
 
-      // ----------------------------------------------
-      // ✅ START LAST SEEN SCHEDULERS ASYNC AFTER SERVER START
-      // ----------------------------------------------
-      COMMUNITIES.forEach(c => {
-        if (c.id && c.uuid) {
-          setTimeout(() => {
-            console.log(`⏳ Starting scheduler for Community ${c.id}`);
-            syncService.startScheduledJobs({
-              communityId: c.id,
-              communityUuid: c.uuid
+            // ✅ Run schedulers in separate tick to avoid blocking
+            setImmediate(() => {
+                COMMUNITIES.forEach(c => {
+                    if (c.id && c.uuid) {
+                        console.log(`⏳ Starting scheduler for Community ${c.id}`);
+                        try {
+                            // Run each scheduler in its own async function
+                            (async () => {
+                                await syncService.startScheduledJobs({
+                                    communityId: c.id,
+                                    communityUuid: c.uuid
+                                });
+                            })();
+                        } catch (err) {
+                            console.error(`Scheduler failed for community ${c.id}:`, err);
+                        }
+                    }
+                });
             });
-          }, 1000); // 1 second delay
-        }
-      });
-    });
+        });
 
-  } catch (err) {
-    console.error('❌ Server start failed:', err);
-  }
+    } catch (err) {
+        console.error('❌ Server start failed:', err);
+    }
 }
 
 start();
-
-// ----------------------------------------------
-// LASTSEEN ROUTES
-// ----------------------------------------------
-const lastSeenRoutes = lastSeenRoutesFactory(db, syncService);
-app.use('/api/local/lastseen', lastSeenRoutes);
