@@ -128,7 +128,7 @@ const app = express();
 // ✅ CORS CONFIGURATION (Netlify + Localhost)
 // ----------------------------------------------
 app.use(cors({ origin: '*' })); // temporarily allow all
-app.set('trust proxy', 1); // if using cookies behind proxies
+app.set('trust proxy', 1);
 app.options('*', cors());
 
 // JSON parsing
@@ -181,25 +181,6 @@ const COMMUNITIES = [
 ];
 
 // ----------------------------------------------
-// ✅ ENABLE LAST SEEN SCHEDULER (IMPORTANT)
-// ----------------------------------------------
-COMMUNITIES.forEach(c => {
-  if (c.id && c.uuid) {
-    console.log(`⏳ Starting scheduler for Community ${c.id}`);
-    syncService.startScheduledJobs({
-      communityId: c.id,
-      communityUuid: c.uuid
-    });
-  }
-});
-
-// ----------------------------------------------
-// LASTSEEN ROUTES
-// ----------------------------------------------
-const lastSeenRoutes = lastSeenRoutesFactory(db, syncService);
-app.use('/api/local/lastseen', lastSeenRoutes);
-
-// ----------------------------------------------
 // START SERVER
 // ----------------------------------------------
 async function start() {
@@ -211,9 +192,24 @@ async function start() {
     console.log('✅ Tables synced');
 
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () =>
-      console.log(`🚀 Backend running on port ${PORT}`)
-    );
+    app.listen(PORT, () => {
+      console.log(`🚀 Backend running on port ${PORT}`);
+
+      // ----------------------------------------------
+      // ✅ START LAST SEEN SCHEDULERS ASYNC AFTER SERVER START
+      // ----------------------------------------------
+      COMMUNITIES.forEach(c => {
+        if (c.id && c.uuid) {
+          setTimeout(() => {
+            console.log(`⏳ Starting scheduler for Community ${c.id}`);
+            syncService.startScheduledJobs({
+              communityId: c.id,
+              communityUuid: c.uuid
+            });
+          }, 1000); // 1 second delay
+        }
+      });
+    });
 
   } catch (err) {
     console.error('❌ Server start failed:', err);
@@ -221,3 +217,9 @@ async function start() {
 }
 
 start();
+
+// ----------------------------------------------
+// LASTSEEN ROUTES
+// ----------------------------------------------
+const lastSeenRoutes = lastSeenRoutesFactory(db, syncService);
+app.use('/api/local/lastseen', lastSeenRoutes);
