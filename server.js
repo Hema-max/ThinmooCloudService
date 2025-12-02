@@ -127,14 +127,7 @@ const app = express();
 // ----------------------------------------------
 // ✅ CORS CONFIGURATION (Netlify + Localhost)
 // ----------------------------------------------
-app.use(cors({
-  origin: [
-    'https://resilient-centaur-bb878c.netlify.app',  // Live frontend
-    'http://localhost:5173'                         // Local testing
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
-}));
+app.use(cors({ origin: '*' })); // temporarily allow all
 app.set('trust proxy', 1); // if using cookies behind proxies
 app.options('*', cors());
 
