@@ -127,30 +127,27 @@ const app = express();
 // ----------------------------------------------
 // ✅ CORS CONFIGURATION (Netlify + Localhost)
 // ----------------------------------------------
-const allowedOrigins = [
-    'https://resilient-centaur-bb878c.netlify.app',
-    'http://localhost:5173'
-];
-
 app.use(cors({
-    origin: allowedOrigins,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
+  origin: [
+    'https://resilient-centaur-bb878c.netlify.app',  // Live frontend
+    'http://localhost:5173'                         // Local testing
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
 }));
-
-
-// ✅ Handle preflight OPTIONS globally
-app.options('*', (req, res) => res.sendStatus(200));
+app.set('trust proxy', 1); // if using cookies behind proxies
+app.options('*', cors());
 
 // JSON parsing
 app.use(express.json());
 
+// Debug
+console.log("🚀 Railway PORT =", process.env.PORT);
+
 // ----------------------------------------------
 // HEALTH CHECK
 // ----------------------------------------------
-app.get('/health', (req, res) => res.json({ status: 'ok' }));
-
+app.get('/', (req, res) => res.json({ status: 'ok' }));
 
 // ----------------------------------------------
 // ROUTES
@@ -166,54 +163,46 @@ app.use('/api/devices', deviceRoutes);
 let cloudAccessToken = null;
 
 app.post("/api/set-cloud-token", (req, res) => {
-    const { token } = req.body;
-    if (!token) return res.status(400).json({ error: "Token missing" });
-    cloudAccessToken = token;
-    res.json({ success: true });
+  const { token } = req.body;
+  if (!token) return res.status(400).json({ error: "Token missing" });
+
+  cloudAccessToken = token;
+  res.json({ success: true });
 });
 
 // ----------------------------------------------
 // LAST SEEN SERVICE SETUP
 // ----------------------------------------------
 const syncService = lastSeenServiceFactory(db, {
-    cloudBase: process.env.BASE_URL,
-    accessTokenGetter: () => cloudAccessToken,
-});
-
-// ----------------------------------------------
-// Serve frontend static files (after all /api routes)
-// ----------------------------------------------
-const path = require('path');
-app.use(express.static(path.join(__dirname, 'dist')));
-
-// Fallback for React routing
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  cloudBase: process.env.BASE_URL,
+  accessTokenGetter: () => cloudAccessToken,
 });
 
 // Community list
 const COMMUNITIES = [
-    { id: process.env.COMMUNITY1_ID, uuid: process.env.COMMUNITY1_UUID },
-    { id: process.env.COMMUNITY2_ID, uuid: process.env.COMMUNITY2_UUID },
-    { id: process.env.COMMUNITY3_ID, uuid: process.env.COMMUNITY3_UUID },
-    { id: process.env.COMMUNITY4_ID, uuid: process.env.COMMUNITY4_UUID },
-    { id: process.env.COMMUNITY5_ID, uuid: process.env.COMMUNITY5_UUID },
+  { id: process.env.COMMUNITY1_ID, uuid: process.env.COMMUNITY1_UUID },
+  { id: process.env.COMMUNITY2_ID, uuid: process.env.COMMUNITY2_UUID },
+  { id: process.env.COMMUNITY3_ID, uuid: process.env.COMMUNITY3_UUID },
+  { id: process.env.COMMUNITY4_ID, uuid: process.env.COMMUNITY4_UUID },
+  { id: process.env.COMMUNITY5_ID, uuid: process.env.COMMUNITY5_UUID },
 ];
 
 // ----------------------------------------------
-// ✅ ENABLE LAST SEEN SCHEDULER
+// ✅ ENABLE LAST SEEN SCHEDULER (IMPORTANT)
 // ----------------------------------------------
 COMMUNITIES.forEach(c => {
-    if (c.id && c.uuid) {
-        console.log(`⏳ Starting scheduler for Community ${c.id}`);
-        syncService.startScheduledJobs({
-            communityId: c.id,
-            communityUuid: c.uuid
-        });
-    }
+  if (c.id && c.uuid) {
+    console.log(`⏳ Starting scheduler for Community ${c.id}`);
+    syncService.startScheduledJobs({
+      communityId: c.id,
+      communityUuid: c.uuid
+    });
+  }
 });
 
+// ----------------------------------------------
 // LASTSEEN ROUTES
+// ----------------------------------------------
 const lastSeenRoutes = lastSeenRoutesFactory(db, syncService);
 app.use('/api/local/lastseen', lastSeenRoutes);
 
@@ -221,21 +210,21 @@ app.use('/api/local/lastseen', lastSeenRoutes);
 // START SERVER
 // ----------------------------------------------
 async function start() {
-    try {
-        await sequelize.authenticate();
-        console.log('✅ Database connected successfully.');
+  try {
+    await sequelize.authenticate();
+    console.log('✅ Database connected successfully.');
 
-        await sequelize.sync({ alter: true });
-        console.log('✅ Tables synced');
+    await sequelize.sync({ alter: true });
+    console.log('✅ Tables synced');
 
-        const PORT = process.env.PORT || 5000;
-        app.listen(PORT, () =>
-            console.log(`🚀 Backend running on port ${PORT}`)
-        );
-    } catch (err) {
-        console.error('❌ Server start failed:', err);
-    }
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () =>
+      console.log(`🚀 Backend running on port ${PORT}`)
+    );
+
+  } catch (err) {
+    console.error('❌ Server start failed:', err);
+  }
 }
 
 start();
-
