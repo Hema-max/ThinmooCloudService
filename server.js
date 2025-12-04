@@ -149,10 +149,10 @@ app.post("/api/set-cloud-token", (req, res) => {
 });
 
 // Last Seen service
-// const syncService = lastSeenServiceFactory(db, {
-//     cloudBase: process.env.BASE_URL,
-//     accessTokenGetter: () => cloudAccessToken,
-// });
+const syncService = lastSeenServiceFactory(db, {
+    cloudBase: process.env.BASE_URL,
+    accessTokenGetter: () => cloudAccessToken,
+});
 
 // Communities
 const COMMUNITIES = [
@@ -164,17 +164,17 @@ const COMMUNITIES = [
 ];
 
 // LastSeen routes
-// const lastSeenRoutes = lastSeenRoutesFactory(db, syncService);
-// app.use('/api/local/lastseen', lastSeenRoutes);
+const lastSeenRoutes = lastSeenRoutesFactory(db, syncService);
+app.use('/api/local/lastseen', lastSeenRoutes);
 
 // Start server
 async function start() {
     try {
-        // await sequelize.authenticate();
-        // console.log('✅ Database connected successfully.');
+        await sequelize.authenticate();
+        console.log('✅ Database connected successfully.');
 
-        // // await sequelize.sync({ alter: true });
-        // await sequelize.sync(); // fast, non-blocking
+        // await sequelize.sync({ alter: true });
+        await sequelize.sync(); // fast, non-blocking
 
         console.log('✅ Tables synced');
 
@@ -183,24 +183,24 @@ async function start() {
             console.log(`🚀 Backend running on port ${PORT}`);
 
             // ✅ Run schedulers in separate tick to avoid blocking
-            // setImmediate(() => {
-            //     COMMUNITIES.forEach(c => {
-            //         if (c.id && c.uuid) {
-            //             console.log(`⏳ Starting scheduler for Community ${c.id}`);
-            //             try {
-            //                 // Run each scheduler in its own async function
-            //                 (async () => {
-            //                     await syncService.startScheduledJobs({
-            //                         communityId: c.id,
-            //                         communityUuid: c.uuid
-            //                     });
-            //                 })();
-            //             } catch (err) {
-            //                 console.error(`Scheduler failed for community ${c.id}:`, err);
-            //             }
-            //         }
-            //     });
-            // });
+            setImmediate(() => {
+                COMMUNITIES.forEach(c => {
+                    if (c.id && c.uuid) {
+                        console.log(`⏳ Starting scheduler for Community ${c.id}`);
+                        try {
+                            // Run each scheduler in its own async function
+                            (async () => {
+                                await syncService.startScheduledJobs({
+                                    communityId: c.id,
+                                    communityUuid: c.uuid
+                                });
+                            })();
+                        } catch (err) {
+                            console.error(`Scheduler failed for community ${c.id}:`, err);
+                        }
+                    }
+                });
+            });
         });
 
     } catch (err) {

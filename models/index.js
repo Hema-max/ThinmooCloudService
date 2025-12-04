@@ -55,7 +55,10 @@ const sequelize = new Sequelize(
 
     // ❗ IMPORTANT: Railway internal DB does NOT use SSL
     dialectOptions: {
-      ssl: false
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
     }
   }
 );
