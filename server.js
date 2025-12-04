@@ -178,7 +178,7 @@ async function start() {
 
         console.log('✅ Tables synced');
 
-        const PORT = process.env.PORT || 5000;
+        const PORT = process.env.PORT || 8080;
         app.listen(PORT, () => {
             console.log(`🚀 Backend running on port ${PORT}`);
 
@@ -202,7 +202,7 @@ async function start() {
             //     });
             // });
         });
-
+        
     } catch (err) {
         console.error('❌ Server start failed:', err);
     }
