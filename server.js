@@ -183,24 +183,24 @@ async function start() {
             console.log(`🚀 Backend running on port ${PORT}`);
 
             // ✅ Run schedulers in separate tick to avoid blocking
-            setImmediate(() => {
-                COMMUNITIES.forEach(c => {
-                    if (c.id && c.uuid) {
-                        console.log(`⏳ Starting scheduler for Community ${c.id}`);
-                        try {
-                            // Run each scheduler in its own async function
-                            (async () => {
-                                await syncService.startScheduledJobs({
-                                    communityId: c.id,
-                                    communityUuid: c.uuid
-                                });
-                            })();
-                        } catch (err) {
-                            console.error(`Scheduler failed for community ${c.id}:`, err);
-                        }
-                    }
-                });
-            });
+            // setImmediate(() => {
+            //     COMMUNITIES.forEach(c => {
+            //         if (c.id && c.uuid) {
+            //             console.log(`⏳ Starting scheduler for Community ${c.id}`);
+            //             try {
+            //                 // Run each scheduler in its own async function
+            //                 (async () => {
+            //                     await syncService.startScheduledJobs({
+            //                         communityId: c.id,
+            //                         communityUuid: c.uuid
+            //                     });
+            //                 })();
+            //             } catch (err) {
+            //                 console.error(`Scheduler failed for community ${c.id}:`, err);
+            //             }
+            //         }
+            //     });
+            // });
         });
 
     } catch (err) {
