@@ -179,7 +179,8 @@ async function start() {
         console.log('✅ Tables synced');
 
         const PORT = process.env.PORT || 8080;
-        app.listen(PORT, () => {
+        
+        app.listen(PORT, "0.0.0.0", () => {
             console.log(`🚀 Backend running on port ${PORT}`);
 
             // ✅ Run schedulers in separate tick to avoid blocking
